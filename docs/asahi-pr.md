@@ -15,7 +15,7 @@ High-value deliverable is the **failure matrix as an issue/comment** (`docs/step
 | CHIP_MIN_VER `0x8132` | `src/main.py` | **No** | M4 enablement without a working supported path; also depends on kernel/driver work that is not ours to gate. Asahi adds chips with the enablement, not before. |
 | DEVICES j623/j624/j773g/j604/j713/j715ap | `src/main.py` | **No** | Same. Expert-only flag does not soften it; upstream explicitly refuses unsupported devices. |
 | IPSW 26.5.1 / 25F80 entry | `src/main.py` | **No** | Lab freeze pin (do-not-bump-past-25F80 is a lab constraint, not upstream policy); upstream picks its own min versions. |
-| `RestoreBundlePath` → `restore` fallback | `src/stub.py` | **Maybe, later** | Only real gift. Matches the documented Tahoe behavior (bless2 `bootcaches.plist` dropped the key; live Preboot uses `<vgid>/restore/`). But upstream symptom is Code 112, not KeyError — needs verification against #404 first. Small (~15 lines incl. `restore_bundle_relpath()` + `_restore_bundle_dir()`), lab-hack-free. Keep out of any allowlist PR. |
+| `RestoreBundlePath` → `restore` fallback | `src/stub.py` | **Maybe, later** | Only real gift. Matches the documented Tahoe behavior (bless2 `bootcaches.plist` dropped the key; live Preboot uses `<volume-id>/restore/`). But upstream symptom is Code 112, not KeyError — needs verification against #404 first. Small (~15 lines incl. `restore_bundle_relpath()` + `_restore_bundle_dir()`), lab-hack-free. Keep out of any allowlist PR. |
 | `LAB_NOSHUTDOWN` env | `src/main.py` | **No** | Lab automation hook; upstream would want nothing of the sort. |
 | `EXPERT=1` env | `src/main.py` | **No** | Non-interactive convenience for SSH bootstrap; upstream deliberately prompts. |
 | IAPM plist 26.5.1/25F80 | `src/step2/IAPhysicalMedia.plist` | **No (as-is)** | Hardcoding the host build is wrong upstream (every user's OS differs); correct fix would be dynamic stamping — but A2 showed 26.5.1 ignores IAPM on an APFS OS VG entirely, so the mechanism itself is dead on 26.x. Issue material, not code. |
@@ -30,12 +30,12 @@ High-value deliverable is the **failure matrix as an issue/comment** (`docs/step
 
 ## If we ever PR (human steps)
 
-1. Fork `AsahiLinux/asahi-installer` on GitHub as `stefanopineda`.
+1. Fork `AsahiLinux/asahi-installer` on GitHub (same account as this notebook).
 2. Topic branch off upstream `main` (not our `j715ap-t8132`); cherry-pick only the `stub.py` restore-bundle change.
 3. One concern per PR: RestoreBundlePath fallback alone. **Never** include the j715ap allowlist, IPSW entry, or any env-var hooks in the same PR.
 4. Before opening: reproduce or explain #404 (`BYErrorDomain Code=112`) on a supported chip with macOS 26; if our fix doesn't touch that path, don't open a PR — comment on #404 instead.
-5. Sign-off: Stefano Pineda; conventional commit message; link #404.
-6. `gh pr create` only with explicit user approval; never push from this lab session.
+5. DCO Signed-off-by on the PR; conventional commit message; link #404.
+6. `gh pr create` only with explicit maintainer approval; never push an enablement PR from a lab session.
 
 ## Runbook pointer
 

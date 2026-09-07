@@ -16,7 +16,7 @@ Same ladder other M4 bring-ups use. Out of order is allowed except G9 (format) a
 | G4 | USB host beyond the debug gadget. |
 | G8 | Wi-Fi. |
 | G9 | `mkfs` on a **pre-created empty** Linux slice only, after G5 and a human yes. |
-| G10 | Real AGX, not llvmpipe. |
+| G10 | Real AGX, not llvmpipe. Overlay/`apple-agx` + DCP swap on the panel counts. Hyprland is G11, not G10. |
 | G11 | Omarchy/Hyprland on that stack. |
 
-This Air: G0–G2 PASS, G2b in progress. See `status.json`.
+This Air (2026-09-07): G0–G2 **PASS**, G2b **in progress**. See `status.json` and [g2b.md](g2b.md).

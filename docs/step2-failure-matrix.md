@@ -1,13 +1,13 @@
 # Step2 failure matrix — M4 Air j715ap / 26.5.1 (25F80)
 
-> **Later outcome (keep this in mind):** G1 on this Air did **not** come from the stub path documented below. It came from a **full second macOS (AsahiHost)** + `kmutil` on that volume. This file remains the log of the **stub 1TR** dead ends so nobody repeats them. G2 Linux banner happened 2026-09-06. G2b userspace still open.
+> **Later outcome (keep this in mind):** G1 on this Air did **not** come from the stub path documented below. It came from a **full second macOS (AsahiHost)** + `kmutil` on that volume (2026-09-05 20:49). G2 Linux banner happened 2026-09-06. G2b userspace still open. This file remains the log of the **stub 1TR** dead ends so nobody repeats them.
 
 Lab: 15" MacBook Air `Mac16,13` / `j715ap` / T8132 `0x8132` / board `0x2E`.  
-Stub VGID `4242B4FB-3C57-416C-B0D9-E3FDA0E19E34`. Stage1 `m1n1.bin` `0dbde320…`. `boot.bin` `4fb2ee86…`.  
+Stage1 `m1n1.bin` `0dbde320…`. `boot.bin` `4fb2ee86…`. Volume group IDs omitted on purpose.  
 Firmware freeze: **do not** Reinstall Tahoe / bump past 25F80.
 
 This file is the log of **failed and confirmed-dead knobs** on the way into G1 (`kmutil configure-boot` / `coih`).  
-0xSero’s mini (`j773`, same T8132) **did** get an authorized m1n1 stub. We are not stuck because T8132 cannot take fuOS. We are stuck because **this Air’s 26.5.1 boot/recovery path will not give us the stub’s paired 1TR**, and every workaround we tried either panics, yellows, or hits SEP `pairing (17)`.
+0xSero’s mini (`j773`, same T8132) **did** get an authorized m1n1 stub. T8132 can take fuOS. **This Air’s 26.5.1 boot/recovery path will not give the stub’s paired 1TR**, and every workaround we tried either panics, yellows, or hits SEP `pairing (17)`.
 
 Tracking before this file: scattered `CLAUDE.md` notes + `evidence/step2/*.log` + panic dump. Not a matrix. That is on us.
 
@@ -21,11 +21,11 @@ Escape from yellow, every time: **Startup Disk → Macintosh HD**. Never Recover
 |---|---|---|
 | SoC | T8132 | T8132 |
 | Board | `j773*` | `j715ap` / `0x2E` |
-| What he proved | Authorized stub (G1). Then HV RAM Linux + tg3 SSH. NVMe/DCP still open. | Stub **on disk**, IPSW identity matched, `boot.bin` in place. **`coih` still absent.** |
+| What he proved | Authorized stub (G1). Then HV RAM Linux + tg3 SSH. NVMe/DCP still open. | **At the time of this matrix:** stub on disk, IPSW identity matched, `boot.bin` in place, stub `coih` absent. **Later:** G1 via AsahiHost, not via this stub. |
 | macOS at install | Not 26.5.1/25F80 (his ANS/DCP work predates our freeze). | **26.5.1 (25F80)** — picker + Full Security verify of an incomplete stub. |
 | Step2 | Stock Asahi: bless stub default → hold power → picker **is already stub 1TR** → `.IAPhysicalMedia` launches `step2.sh` → `bputil -nc` + `kmutil`. | Same recipe **never reaches the picker**. iBoot treats the stub as a broken macOS and shows yellow. |
 
-G2+ (ADT, HV, NVMe) is not the problem. We have not booted m1n1. Fumbling is 100% at **paired 1TR**.
+The stub path never yielded m1n1. Fumbling was 100% at **paired 1TR**. G1 later used a complete second macOS (F6).
 
 ---
 
@@ -48,11 +48,11 @@ Asahi’s `.IAPhysicalMedia` trick (hide SystemVersion, picker launches Finish I
 
 ---
 
-## Current state (2026-09-05, after E7)
+## Historical snapshot (2026-09-05, after E7 — before AsahiHost G1)
 
 | Knob | Value |
 |---|---|
-| Default boot | Macintosh HD (`31788FEF-…`) — do not bless stub until C1b |
+| Default boot | Macintosh HD — do not bless stub (C1b later dead) |
 | Running recovery when E7 ran | Macintosh HD 1TR (`one true recoveryOS`, **Not Paired** to stub) |
 | Stub pairing | **Not Paired** (expected from this recovery) |
 | Stub security | **Reduced** (`smb0: 1`) — E7 **PASS** |
@@ -96,10 +96,10 @@ Legend: **Dead** = reproduced, do not retry. **Undone** = we reverted. **Open** 
 
 | # | Knob | What we set | Result | Status | Evidence |
 |---|---|---|---|---|---|
-| C1 | `bless --setBoot --mount "/Volumes/m1n1 proxy"` from macOS | Asahi stock after stage1 | Default = stub. Next boot (hold or not) → **yellow**, no three-icon picker | Dead (reproduced **3 times**: after install, after accessory fix, after Recovery bless+shutdown 2026-09-05 ~07:40 and again when user retried) | nvram `boot-volume` …`:4242B4FB-…`; user report |
+| C1 | `bless --setBoot --mount "/Volumes/m1n1 proxy"` from macOS | Asahi stock after stage1 | Default = stub. Next boot (hold or not) → **yellow**, no three-icon picker | Dead (reproduced **3 times**: after install, after accessory fix, after Recovery bless+shutdown 2026-09-05 ~07:40 and again when user retried) | nvram `boot-volume` pointed at stub; user report |
 | C1b | Same bless **after E7 Reduced** (`smb0: 1`), from Macintosh HD 1TR; `getBoot` = `/dev/disk2s2` = `m1n1 proxy` | Hypothesis: yellow was Full Security verify; Reduced might show picker | **Yellow again.** Reduced does not skip iBoot verify of an incomplete OS. Hold-until-icons also shut the machine down; release on “Loading startup options…” | **Dead** | user report + photo 2026-09-05 after `bless --getBoot` `/dev/disk2s2` |
 | C2 | Same bless from **Macintosh HD 1TR Terminal** | Thought Recovery bless would be cleaner | Same yellow, no picker | Dead | user report after `bless` + `shutdown -h now` |
-| C3 | Startup Disk → Macintosh HD (yellow escape) | Required to get macOS back | Works. Default `31788FEF-…` | Live | `bless --getBoot` Macintosh HD |
+| C3 | Startup Disk → Macintosh HD (yellow escape) | Required to get macOS back | Works. Default = Macintosh HD | Live | `bless --getBoot` Macintosh HD |
 | C4 | Hold Option + **Always Use** on m1n1 proxy at picker | Apple Help “set default startup volume” | **Not tried.** Would set stub default then auto-restart → predicted yellow/panic. Do not | Open / predicted dead | Apple Help mchl82829c17 |
 
 ### D. What you click on the three-icon picker (Macintosh HD default)
@@ -114,19 +114,19 @@ Picker **does** appear when Macintosh HD is default: **m1n1 proxy | Macintosh HD
 | D4 | **Gear**, then Continue | Macintosh HD **1TR**. User list **with no “Select a volume to recover”** on this machine. Confirmed twice | Live path into **wrong** recovery | user report |
 | D5 | Gear, then Option-click stub on “select a volume to recover” | **That screen never appears** (gear → user list directly). Cannot execute | Dead (UI missing) | user report, twice |
 
-### E. Inside Macintosh HD 1TR (gear → stef password → 4 tiles)
+### E. Inside Macintosh HD 1TR (gear → admin auth → 4 tiles)
 
-`bputil -d -v 4242B4FB-…` from this recovery: **OS Type: one true recoveryOS**, **OS Pairing Status: Not Paired**.
+`bputil -d` on the stub VGID from this recovery: **OS Type: one true recoveryOS**, **OS Pairing Status: Not Paired**.
 
 | # | Knob | Result | Status | Evidence |
 |---|---|---|---|---|
 | E1 | `"/Volumes/m1n1 proxy/step2.sh"` without quotes | `/Volumes/m1n1: No such file or directory` (space) | Trap | user report |
 | E2 | Same, quoted, stub mounted | Script runs. Prints our patched “Not Paired / do not bless” and stops | Expected | user photo 07:23 |
-| E3 | `bputil -nc -v 4242B4FB-…` (Permissive + disable CTRR) | Password **accepted**. Then `BYErrorDomain Code=401` “Failed to create local policy”, underlying `com.apple.bootpolicy Code=17 "pairing (17)"` | Dead | user photo |
+| E3 | `bputil -nc` on the stub VGID (Permissive + disable CTRR) | Password **accepted**. Then `BYErrorDomain Code=401` “Failed to create local policy”, underlying `com.apple.bootpolicy Code=17 "pairing (17)"` | Dead | user photo |
 | E4 | `kmutil configure-boot … -v "/Volumes/m1n1 proxy"` from this 1TR | Not run after E3 (would fail the same pairing). From **full macOS**: `configure-boot must be run from macOS Recovery` | Dead from macOS; unpaired 1TR predicted dead | ssh 07:11 |
 | E5 | Startup Security Utility → Macintosh HD | Unlock works. Accessories “Always Allow”. Irrelevant | — | user report |
 | E6 | SSU → **m1n1 proxy** | Visible as “macOS 26.5.1”. **Security Policy grayed:** “must be the startup disk”. Accessories Always Allow. Option-click does nothing extra | Dead from this recovery | user report |
-| E7 | `bputil -g -v 4242B4FB-…` (**Reduced only**) from Macintosh HD 1TR | Password accepted. Policy update succeeded. Stub local policy: **Security Mode Reduced (`smb0: 1`)**. `coih` still absent. Running recovery still **Not Paired**. `/Users/stef/e7.sh` missing in this recovery (Data path not mounted); raw `bputil -g` worked | **PASS** | User photo 2026-09-05 Recovery Terminal |
+| E7 | `bputil -g` on the stub VGID (**Reduced only**) from Macintosh HD 1TR | Password accepted. Policy update succeeded. Stub local policy: **Security Mode Reduced (`smb0: 1`)**. `coih` still absent. Running recovery still **Not Paired**. Helper script missing in this recovery (Data path not mounted); raw `bputil -g` worked | **PASS** | User photo 2026-09-05 Recovery Terminal |
 | E8 | `bputil -k` / `-s` (kexts / disable SSV) from unpaired 1TR | Not tried. `-s` is Permissive-class; likely pairing (17) | Open / predicted dead | bputil help |
 
 ### F. Things we did **not** try (and should not silently skip)
@@ -138,7 +138,7 @@ Picker **does** appear when Macintosh HD is default: **m1n1 proxy | Macintosh HD
 | F3 | DFU revive/restore | Wipes; breaks freeze | Not unless owner says so |
 | F4 | Double-press power (fallback recoveryOS) | Ordinary recovery, **not** 1TR. `step2.sh` would reject “one true recoveryOS” | Low value |
 | F5 | Installer run from Recovery Terminal (Asahi expert path) | Creates stub already in some recovery; can land Reduced from unpaired. We already have a stub; this would be a **re-install of stage1 from 1TR** | Open, high cost |
-| F6 | Second **complete** macOS 26.5.1 (`25F80`) in the free space, then 1TR **that** VGID and `kmutil` m1n1 **there** | Hollow stub cannot be default without yellow. A real OS can. Pairing follows the complete volume, not the 2.5 GB stub | **Open — this is the way through** |
+| F6 | Second **complete** macOS 26.5.1 (`25F80`) in the free space, then 1TR **that** volume and `kmutil` m1n1 **there** | Hollow stub cannot be default without yellow. A real OS can. Pairing follows the complete volume, not the 2.5 GB stub | **PASS 2026-09-05 20:49** (AsahiHost). This is G1. |
 | F7 | Seal/SSV the stub System volume | Would need Apple’s sealer. We cannot fake `rootvp` auth | Not feasible |
 
 ---
@@ -169,20 +169,18 @@ Picker **does** appear when Macintosh HD is default: **m1n1 proxy | Macintosh HD
 
 Astra (OpenRouter `openai/gpt-6-astra`, 2026-09-05, $0.049): **APPROVE C1b once as diagnostic**, not as a likely fix. Reduced does not disable SSV/`rootvp` auth; yellow vs picker is a different observation than the XNU panic. If picker appears, still verify **Paired** to this VGID before `-nc`/`kmutil`. Yellow again ends C1b. HV still blocked until an accepted m1n1 boot path exists (`coih` is authorization, not USB magic). Full text: `evidence/step2/astra-e7-review.json`.
 
-## Next experiment (one hypothesis)
+## What happened next (F6 — done)
 
 **C1b is dead.** Do not bless the 2.5 GB stub as default again.
 
-**F6** — complete 26.5.1 (`25F80`) on a new volume, then 1TR **that** VGID.
+**F6 completed 2026-09-05 20:49:** complete 26.5.1 (`25F80`) as volume **AsahiHost**, 1TR **that** OS, Permissive + `kmutil` m1n1 there. That is G1.
 
-Progress 2026-09-05 19:30 local:
+Notes from the install (2026-09-05 ~19:30 local):
 
-- GPT: `disk0s6` / container `disk5` / volume **AsahiHost** 52 GB, Recovery still last. 4.5 GB leftover free.
+- New GPT slice, volume **AsahiHost**, Recovery still last.
 - Fetched `/Applications/Install macOS Tahoe.app` via `softwareupdate --fetch-full-installer --full-installer-version 26.5.1`. Payload **Build 25F80**. Do not use 26.6.x from the catalog.
 - `startosinstall --volume /Volumes/AsahiHost` on this Tahoe IA **prints usage and exits 15** (`--volume` is in the binary strings but not accepted by the CLI). Do not `--eraseinstall`.
-- GUI installer launched (`open` InstallAssistant + osinstallersetupd). Destination must be **AsahiHost**, never Macintosh HD.
-
-Next: in the Air GUI, walk the installer onto **AsahiHost**. Then boot that OS once, 1TR it, `kmutil` m1n1 there.
+- GUI installer (`InstallAssistant`). Destination must be **AsahiHost**, never Macintosh HD.
 
 ---
 

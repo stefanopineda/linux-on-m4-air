@@ -1,7 +1,8 @@
 {
-  "updated": "2026-09-07T04:40:00Z",
+  "updated": "2026-09-07T05:30:00Z",
   "project": "linux-on-m4-air",
   "public": false,
+  "public_ready": true,
   "machine": {
     "product": "Mac16,13",
     "name": "MacBook Air 15-inch M4",
@@ -14,23 +15,51 @@
   "honesty": "QEMU/UTM/VKMS/iBoot-FB/Hyprland-on-fake-display do not count",
   "gates": {
     "G0": { "state": "pass", "when": "2026-09-05", "note": "identity dump" },
-    "G1": { "state": "pass", "when": "2026-09-05T20:49:00Z", "note": "AsahiHost coih + m1n1 USB proxy; stub path failed" },
+    "G1": { "state": "pass", "when": "2026-09-05T20:49:00Z", "note": "AsahiHost Permissive + kmutil m1n1; stub 1TR dead on 26.5.1" },
     "G2": { "state": "pass", "when": "2026-09-06T15:58:11Z", "note": "Linux 7.1.9 banner + Machine model on HV VUART" },
-    "G2b": { "state": "now", "when": "2026-09-07", "note": "hang in kernel_clone/copy_process; WDT bisection" },
+    "G2b": {
+      "state": "now",
+      "when": "2026-09-07",
+      "note": "hang on kernel_clone→copy_process edge; tracks current/SP_EL0. last 19s after valid_signal (738); last 100s immediately before copy_process (740/713). do not skip copy_process or current->nsproxy"
+    },
     "G5": { "state": "todo", "note": "NVMe RO after G2b" },
     "G6": { "state": "todo", "note": "linux-owned scanout; dcp+disp0; leftover FB does not count" },
-    "G7": { "state": "todo", "note": "MTP keyboard" },
+    "G7": { "state": "todo", "note": "MTP keyboard (Air is MTP+dockchannel, not SPI)" },
     "trackpad": { "state": "todo", "note": "MTP; wtsnz public pass 2026-09-06 on M4 Max" },
-    "weston": { "state": "todo", "note": "software compositor after G6+HID" },
+    "weston": { "state": "todo", "note": "software compositor after G6+HID; wtsnz public pass 2026-09-06" },
+    "G4": { "state": "todo", "note": "USB host beyond debug CDC" },
+    "G8": { "state": "todo", "note": "bcm4387 / PCIe; wtsnz public pass 2026-08-29 on M4 Max" },
     "G9": { "state": "blocked", "note": "mkfs needs G5 + spoken yes" },
-    "G10": { "state": "blocked", "note": "no public M4 GPU ISA" },
-    "G11": { "state": "todo", "note": "Omarchy after a real console" }
+    "G10": { "state": "todo", "note": "real AGX; wtsnz public AGX+DCP 2026-09-07 on M4 Max; Hyprland still open there" },
+    "G11": { "state": "todo", "note": "Omarchy after a real console+GPU" }
   },
   "g1_path": "asahihost",
   "stub_1tr": "dead_on_26.5.1",
   "gap_to_wtsnz_weston_trackpad": ["G2b", "G6", "G7", "trackpad", "weston"],
+  "gap_note": "five gates behind 2026-09-06 Weston+trackpad. AGX (2026-09-07) is a further checkpoint, off this path. Hyprland still open for wtsnz.",
+  "others": {
+    "asahi": "M1/M2 supported; M4 bring-up; t8132-j715.dts in tree",
+    "0xSero": "M4 mini j773; G1 stub + HV RAM Linux + Ethernet SSH; NVMe/DCP open; VKMS Hyprland does not count",
+    "wtsnz": "M4 Max; shell 2026-08-25; NVMe/USB/Wi-Fi Aug 26-29; scanout Aug 30; software Weston+trackpad 2026-09-06; AGX+DCP 2026-09-07"
+  },
   "pins": {
     "m1n1_stage1_sha256": "0dbde320b863b5cd84ebc1a152456ed2b0cd1818880d4324866c32d534e74a35",
-    "g2_linux": "7.1.9-g77cb8f24c"
-  }
+    "boot_bin_sha256": "4fb2ee866c457a176566ec922d7b699bc452d580bf1e6d3798a6ec9af3b6257c",
+    "g2_linux": "7.1.9-g77cb8f24c",
+    "g2b_last_19s_site": 738,
+    "g2b_last_100s_before_copy_process": 713,
+    "g2b_wdt_images": 38,
+    "g2b_copy_process_images": 17
+  },
+  "kept_skips": [
+    "set_mems_allowed",
+    "update_siblings_masks",
+    "init_cpu_topology"
+  ],
+  "banned_skips": [
+    "copy_process",
+    "current->nsproxy",
+    "numa_default_policy",
+    "kernel_init_freeable"
+  ]
 }
