@@ -7,10 +7,6 @@ Public-ready **notes** for the 15" M4 Air Linux bring-up. Live kernels and USB s
 - Stub 1TR deaths: `docs/step2-failure-matrix.md`
 - Do not kmutil Macintosh HD. Do not bless the 2.5 GB stub. Do not put `.env` here.
 
-This GitHub repo may still be **private**. Flip public only after a human reads the tree:
+This GitHub repo is **public**: https://github.com/stefanopineda/linux-on-m4-air
 
-```
-gh repo edit --visibility public --accept-visibility-change-consequences
-```
-
-`status.json` has `"public_ready": true` when the notebook is meant to survive that flip (no LAN IPs, USB serials, volume UUIDs, or credential names).
+Keep it that way: no LAN IPs, USB serials, volume UUIDs, or credential names in git.

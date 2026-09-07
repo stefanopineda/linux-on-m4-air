@@ -1,7 +1,7 @@
 {
   "updated": "2026-09-07T05:30:00Z",
   "project": "linux-on-m4-air",
-  "public": false,
+  "public": true,
   "public_ready": true,
   "machine": {
     "product": "Mac16,13",
