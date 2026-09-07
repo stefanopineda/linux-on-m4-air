@@ -1,0 +1,5 @@
+.DS_Store
+.env
+*.sparseimage
+*.ipsw
+evidence-raw/

@@ -1,0 +1,36 @@
+{
+  "updated": "2026-09-07T04:40:00Z",
+  "project": "linux-on-m4-air",
+  "public": false,
+  "machine": {
+    "product": "Mac16,13",
+    "name": "MacBook Air 15-inch M4",
+    "device_class": "j715ap",
+    "chip": "0x8132",
+    "board": "0x2E",
+    "macos_freeze": "26.5.1",
+    "macos_build": "25F80"
+  },
+  "honesty": "QEMU/UTM/VKMS/iBoot-FB/Hyprland-on-fake-display do not count",
+  "gates": {
+    "G0": { "state": "pass", "when": "2026-09-05", "note": "identity dump" },
+    "G1": { "state": "pass", "when": "2026-09-05T20:49:00Z", "note": "AsahiHost coih + m1n1 USB proxy; stub path failed" },
+    "G2": { "state": "pass", "when": "2026-09-06T15:58:11Z", "note": "Linux 7.1.9 banner + Machine model on HV VUART" },
+    "G2b": { "state": "now", "when": "2026-09-07", "note": "hang in kernel_clone/copy_process; WDT bisection" },
+    "G5": { "state": "todo", "note": "NVMe RO after G2b" },
+    "G6": { "state": "todo", "note": "linux-owned scanout; dcp+disp0; leftover FB does not count" },
+    "G7": { "state": "todo", "note": "MTP keyboard" },
+    "trackpad": { "state": "todo", "note": "MTP; wtsnz public pass 2026-09-06 on M4 Max" },
+    "weston": { "state": "todo", "note": "software compositor after G6+HID" },
+    "G9": { "state": "blocked", "note": "mkfs needs G5 + spoken yes" },
+    "G10": { "state": "blocked", "note": "no public M4 GPU ISA" },
+    "G11": { "state": "todo", "note": "Omarchy after a real console" }
+  },
+  "g1_path": "asahihost",
+  "stub_1tr": "dead_on_26.5.1",
+  "gap_to_wtsnz_weston_trackpad": ["G2b", "G6", "G7", "trackpad", "weston"],
+  "pins": {
+    "m1n1_stage1_sha256": "0dbde320b863b5cd84ebc1a152456ed2b0cd1818880d4324866c32d534e74a35",
+    "g2_linux": "7.1.9-g77cb8f24c"
+  }
+}
