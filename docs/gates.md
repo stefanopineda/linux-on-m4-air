@@ -19,4 +19,4 @@ Same ladder other M4 bring-ups use. Out of order is allowed except G9 (format) a
 | G10 | Real AGX, not llvmpipe. Overlay/`apple-agx` + DCP swap on the panel counts. Hyprland is G11, not G10. |
 | G11 | Omarchy/Hyprland on that stack. |
 
-This Air (2026-09-07): G0–G2 **PASS**, G2b **in progress**. See `status.json` and [g2b.md](g2b.md).
+This Air (2026-09-08): G0–G2 **PASS**, G2b **in progress** (timer/FIQ/ENA wall; not PASS). See `status.json`, [g2b.md](g2b.md), and [ghidra-pivot.md](ghidra-pivot.md).

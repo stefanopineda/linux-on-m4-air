@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-07T05:30:00Z",
+  "updated": "2026-09-08T22:32:10Z",
   "project": "linux-on-m4-air",
   "public": true,
   "public_ready": true,
@@ -19,8 +19,8 @@
     "G2": { "state": "pass", "when": "2026-09-06T15:58:11Z", "note": "Linux 7.1.9 banner + Machine model on HV VUART" },
     "G2b": {
       "state": "now",
-      "when": "2026-09-07",
-      "note": "hang on kernel_clone→copy_process edge; tracks current/SP_EL0. last 19s after valid_signal (738); last 100s immediately before copy_process (740/713). do not skip copy_process or current->nsproxy"
+      "when": "2026-09-08",
+      "note": "timer/FIQ/ENA wall + Ghidra pivot. Guest never takes Apple FIQ vector; msr VM_TMR_FIQ_ENA_EL2 EL2h-SYNCs on t8132. 25F80 kernelcache: 5x MSR ENA, 0x MRS ENA, 0x VM_TMR_LR; vmentry writes ENA=0xF. copy_process sandwich is history; do not skip copy_process or current->nsproxy. G2b is not PASS."
     },
     "G5": { "state": "todo", "note": "NVMe RO after G2b" },
     "G6": { "state": "todo", "note": "linux-owned scanout; dcp+disp0; leftover FB does not count" },
@@ -36,11 +36,13 @@
   "g1_path": "asahihost",
   "stub_1tr": "dead_on_26.5.1",
   "gap_to_wtsnz_weston_trackpad": ["G2b", "G6", "G7", "trackpad", "weston"],
-  "gap_note": "five gates behind 2026-09-06 Weston+trackpad. AGX (2026-09-07) is a further checkpoint, off this path. Hyprland still open for wtsnz.",
+  "gap_note": "five gates behind 2026-09-06 Weston+trackpad. AGX (2026-09-07) is a further checkpoint, off this path. Hyprland still open for wtsnz. This Air G2b wall is timer/FIQ/ENA, not userspace.",
   "others": {
     "asahi": "M1/M2 supported; M4 bring-up; t8132-j715.dts in tree",
-    "0xSero": "M4 mini j773; G1 stub + HV RAM Linux + Ethernet SSH; NVMe/DCP open; VKMS Hyprland does not count",
-    "wtsnz": "M4 Max; shell 2026-08-25; NVMe/USB/Wi-Fi Aug 26-29; scanout Aug 30; software Weston+trackpad 2026-09-06; AGX+DCP 2026-09-07"
+    "0xSero": "M4 mini j773; public HEAD last noted e0d67e3 / 2026-08-28; G1 stub + HV RAM Linux + Ethernet SSH; NVMe/DCP open; VKMS Hyprland does not count; do not DM",
+    "wtsnz": "M4 Max; shell 2026-08-25; NVMe/USB/Wi-Fi Aug 26-29; scanout Aug 30; software Weston+trackpad 2026-09-06; AGX+DCP 2026-09-07",
+    "ewninjaofficial": "Ghidra + macOS snapshots + Linux reboots for missing T8132 pieces (GPU compute on MBA M4). This lab follows the method, not the GPU claim.",
+    "kwargq": "ran Eryk/Aurora Silicon .pkg (desktop, still llvmpipe). Lab did not consume the installer."
   },
   "pins": {
     "m1n1_stage1_sha256": "0dbde320b863b5cd84ebc1a152456ed2b0cd1818880d4324866c32d534e74a35",
@@ -49,7 +51,14 @@
     "g2b_last_19s_site": 738,
     "g2b_last_100s_before_copy_process": 713,
     "g2b_wdt_images": 38,
-    "g2b_copy_process_images": 17
+    "g2b_copy_process_images": 17,
+    "g2b_last_hv": 174,
+    "g2b_last_hv_when": "2026-09-08T20:30:42Z",
+    "g2b_last_hv_image_prefix": "70a7fda5",
+    "vm_tmr_fiq_ena_el2": "sys_reg(3,5,15,1,3)",
+    "vm_tmr_fiq_ena_mrs": "0xD53DF160",
+    "vm_tmr_fiq_ena_msr": "0xD51DF160",
+    "ghidra": "12.1.3"
   },
   "kept_skips": [
     "set_mems_allowed",
@@ -61,5 +70,9 @@
     "current->nsproxy",
     "numa_default_policy",
     "kernel_init_freeable"
+  ],
+  "banned_msr": [
+    "VM_TMR_FIQ_ENA_EL2",
+    "VM_TMR_LR_EL2"
   ]
 }

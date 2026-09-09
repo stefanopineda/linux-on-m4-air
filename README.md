@@ -1,6 +1,6 @@
 # Linux on a 15″ M4 MacBook Air
 
-**Status (2026-09-07):** this is a **lab log**, not a distro. Apple’s installer still says M4 is unsupported. This Air has a working **m1n1 USB debugger** and has printed a **Linux kernel banner** (`7.1.9`) over a virtual UART. It does **not** yet run userspace, own the panel, talk to the trackpad, or run Omarchy.
+**Status (2026-09-08):** this is a **lab log**, not a distro. Apple’s installer still says M4 is unsupported. This Air has a working **m1n1 USB debugger** and has printed a **Linux kernel banner** (`7.1.9`) over a virtual UART. It does **not** yet run userspace, own the panel, talk to the trackpad, or run Omarchy. G2 is PASS. **G2b is not.** The 2026-09-07 `copy_process` sandwich was early; the wall now is timer/FIQ/`VM_TMR_FIQ_ENA_EL2`.
 
 If you dual-boot Windows and Linux on a PC, this is the Apple Silicon version of “what actually happens at boot” — plus what we tried, what died, and how to reach the same wall we are on now.
 
@@ -22,14 +22,14 @@ Live kernels and USB scripts stay in a separate studio tree. This GitHub repo is
 
 ---
 
-## Where we are (this Air, 2026-09-07)
+## Where we are (this Air, 2026-09-08 / 09)
 
 | Gate | Meaning | This Air | When |
 | --- | --- | --- | --- |
 | **G0** | Chip, board, firmware written down | **PASS** — `Mac16,13` / `j715ap` / T8132 `0x8132` / board `0x2E` / macOS **26.5.1 (25F80)** freeze | 2026-09-05 |
 | **G1** | m1n1 enrolled, USB proxy talks | **PASS** via a full second macOS (**AsahiHost**). The 2.5 GB Asahi stub path is **dead** on 26.5.1 | 2026-09-05 20:49 |
 | **G2** | Linux prints its banner (RAM, under m1n1 HV) | **PASS** — `Linux version 7.1.9` + `Machine model: Apple MacBook Air (15-inch, M4, 2025)` on HV VUART | 2026-09-06 15:58Z |
-| **G2b** | First userspace process (`/init`) | **NOW** — hang on the `kernel_clone` → `copy_process` edge. Tracks `current` (`mrs SP_EL0`) more than the function name | 2026-09-07 |
+| **G2b** | First userspace process (`/init`) | **NOW** — guest never takes the Apple FIQ vector; `msr VM_TMR_FIQ_ENA_EL2` from m1n1 EL2h-SYNCs. Ghidra pivot on 25F80 dumps. **Not PASS.** Do not skip `copy_process` | 2026-09-08 |
 | **G5** | NVMe read-only | not started |  |
 | **G6** | Linux-owned display (`dcp`+`disp0`) | not started (leftover Apple framebuffer does not count) |  |
 | **G7 / trackpad** | Keyboard / trackpad (MTP + dockchannel) | not started |  |
@@ -38,7 +38,7 @@ Live kernels and USB scripts stay in a separate studio tree. This GitHub repo is
 | **G10** | Real AGX (not llvmpipe) | not started here |  |
 | **G11** | Omarchy / Hyprland | blocked on a kernel console + GPU |  |
 
-**The current wall, in one sentence:** Linux reaches `rest_init`, spawns `kernel_init` via `user_mode_thread` → `kernel_clone`, and dies around the first `current` load on the way into `copy_process`. UART is muted after the dummy console (printk itself hangs). We time statements with an 8-second guest watchdog poke: **~19s** means the poke fired, **~100s** means it never ran. Details: [docs/g2b.md](docs/g2b.md).
+**The current wall, in one sentence:** guest Linux never takes the Apple FIQ vector; writing `VM_TMR_FIQ_ENA_EL2` from m1n1 SYNCs on this t8132. The 2026-09-07 hang on `kernel_clone`→`copy_process` was early in the walk — do not rewind it, and do not skip `copy_process`. Later clean boots (guest exception class 783–786, T/V/W probes, live-window FIQ inject) showed the cut is timer/FIQ delivery, not “we skipped too much kernel.” More `wdt_site` folklore cannot read Apple’s binaries. **~19s** still means the guest poke fired; **~100s** means it never ran. Details: [docs/g2b.md](docs/g2b.md), [docs/ghidra-pivot.md](docs/ghidra-pivot.md).
 
 Machine-readable copy: [`status.json`](status.json). Gate definitions: [docs/gates.md](docs/gates.md).
 
@@ -78,8 +78,10 @@ Bring-up here is a thin layer on other people’s years.
 - **Sven Peter ([@svenpeter42](https://x.com/svenpeter42))** — m1n1, DCP, and the “proxy is a JTAG that speaks USB” workflow.
 - **Yureka Lilian ([@yuyuyureka](https://x.com/yuyuyureka))** — T8132 PMGR, HV GXF/SPTM, 7.2 ANS/SMP notes. Use the Asahi kernel; do not invent MMIO.
 - **Janne Grunau and the Asahi kernel releases** — `asahi-7.1.x` tags. This lab is on **7.1.9** (`77cb8f24c`). 7.2 exists; we have not A/B’d it on G2b.
-- **[0xSero/mac-mini-m4-linux](https://github.com/0xSero/mac-mini-m4-linux)** — same T8132, **Mac mini** (`j773`). Landmines we copied on purpose: do not `pmgr_reset(DISPEXT*)` (SError), skip locked IMP sysregs, kboot teardown vs HV. Different display (`dcpext0` vs our `dcp`+`disp0`). Hyprland-on-VKMS is documented there as not completion; we agree.
-- **[@wtsnz](https://x.com/wtsnz)** — public M4 **Max** MacBook Pro checkpoints (Aug–Sep 2026): console, keyboard, NVMe, USB Ethernet, Wi-Fi, Linux-owned scanout, software Weston, trackpad, then AGX+DCP. No public tree we are tracking; the videos are the evidence.
+- **[0xSero/mac-mini-m4-linux](https://github.com/0xSero/mac-mini-m4-linux)** — same T8132, **Mac mini** (`j773`). Public HEAD last noted `e0d67e3` / 2026-08-28. Do not DM. Landmines we copied on purpose: do not `pmgr_reset(DISPEXT*)` (SError), skip locked IMP sysregs, kboot teardown vs HV. Different display (`dcpext0` vs our `dcp`+`disp0`). Hyprland-on-VKMS is documented there as not completion; we agree.
+- **[@wtsnz](https://x.com/wtsnz)** — public M4 **Max** MacBook Pro checkpoints (Aug–Sep 2026): console, keyboard, NVMe, USB Ethernet, Wi-Fi, Linux-owned scanout, software Weston, trackpad, then AGX+DCP. No public tree we are tracking; the videos are the evidence. This Air is still G2b.
+- **Eryk Wieliczko ([@ewninjaofficial](https://x.com/ewninjaofficial))** — [Ghidra + macOS snapshots + many Linux reboots](https://x.com/ewninjaofficial/status/2093963487449841675) to build missing T8132 pieces (GPU compute demo on an MBA M4). This lab is following that **method** (dump 25F80 binaries, decompile, then experiment), not claiming his GPU result. [docs/ghidra-pivot.md](docs/ghidra-pivot.md).
+- **Not taken:** [@kwargq](https://x.com/kwargq/status/2097351557717074307) ran an Eryk / Aurora Silicon `.pkg` installer (desktop, still llvmpipe). The lab forbade installer-consume.
 - **Phoronix, 2026-07** — [initial M4 device-tree patches](https://www.phoronix.com/news/Apple-M4-DT-Linux). Start of the public M4 DT story, not a laptop bring-up.
 - **Omarchy** is [omarchy.org](https://omarchy.org) / [omacom/omarchy](https://github.com/omacom/omarchy). We are not Omarchy. We are not Asahi. The end-state *this* lab wants is Omarchy on this Air; the path is Asahi-shaped bring-up first.
 
@@ -156,7 +158,7 @@ A full runbook: [docs/getting-started.md](docs/getting-started.md). The short ve
 5. Linux in **RAM under the hypervisor**, not direct kboot (kboot still ~6s-resets on this Air). Bootargs that got us a banner: `earlycon keep_bootcon console=none nr_cpus=1 idle=nop`. **`idle=nop` is load-bearing** — without it the kernel looks dead in WFI.
 6. After the banner: **printk hangs** past the dummy console. Mute the console, then walk `rest_init` with a guest watchdog poke (19s vs 100s). Do not debug G2b with more bootargs.
 7. Topology calls that hung and were skipped (kept): `set_mems_allowed`, `update_siblings_masks`, `init_cpu_topology`. Do **not** skip `copy_process`, `current->nsproxy`, or `numa_default_policy` (those skips did not unblock).
-8. You are caught up when you can reproduce: banner on HV VUART, then a hang whose last firing poke is after `valid_signal` in `kernel_clone` and whose next poke (immediately before `copy_process`) never runs.
+8. You are caught up when you can reproduce: banner on HV VUART; the 2026-09-07 `copy_process` sandwich as **history** (do **not** skip `copy_process` / `current->nsproxy`); then the timer/FIQ wall — guest exception class never entered after INIT, CNTP FIQ at EL2, CNTV pending, ENA already `f`, synthetic FIQ inject at `VBAR+0x300` still MUTED. Then the Ghidra encodings in [docs/ghidra-pivot.md](docs/ghidra-pivot.md). Do not IMP-MSR ENA/LR.
 
 We are **not** publishing a one-liner installer.
 
@@ -169,8 +171,9 @@ Not a kernel fork worth upstreaming. A **repro log**:
 - 26.5.1 stub-1TR is a dead path on this laptop (matrix above). AsahiHost is the G1 that worked.
 - Air ADT classification: panel **`dcp`+`disp0`** (not the mini’s `dcpext0`); HID **MTP + dockchannel** (not SPI); NVMe ANS; AIC3; USB DRD; Wi-Fi `bcm4387`.
 - G2 under HV with skip-teardown m1n1, locked IMP sysregs skipped, `idle=nop`, `nr_cpus=1`.
-- G2b method: one unique `Image.gz` hash per watchdog site; never re-boot the same hash. 38 unique Images in the `rest_init` walk; 17 of those poked or patched inside `copy_process`. [docs/g2b.md](docs/g2b.md).
-- We did **not** open an Asahi installer PR that allowlists `j715ap`. Issue-shaped data only: [docs/asahi-pr.md](docs/asahi-pr.md).
+- G2b method: one unique `Image.gz` hash per watchdog site; never re-boot the same hash. 38 unique Images in the `rest_init` walk; 17 of those poked or patched inside `copy_process`. That sandwich is **history**. [docs/g2b.md](docs/g2b.md).
+- 2026-09-08 timer/FIQ wall + Ghidra pivot: 25F80 from-dir dumps (`kernelcache.release.mac16g`, SPTM, `armfw_g16g`); ENA is `sys_reg(3,5,15,1,3)` MRS `0xD53DF160` / MSR `0xD51DF160`; kernelcache has 5× MSR ENA, 0× MRS ENA, 0× `VM_TMR_LR`; vmentry writes `ENA=0xF`. [docs/ghidra-pivot.md](docs/ghidra-pivot.md).
+- We did **not** open an Asahi installer PR that allowlists `j715ap`. Issue-shaped data only: [docs/asahi-pr.md](docs/asahi-pr.md). We did **not** consume the kwargq / Aurora Silicon `.pkg`.
 
 ---
 
@@ -179,7 +182,8 @@ Not a kernel fork worth upstreaming. A **repro log**:
 | Path | What |
 | --- | --- |
 | [docs/getting-started.md](docs/getting-started.md) | Repeat the path to G1/G2 and join the G2b walk |
-| [docs/g2b.md](docs/g2b.md) | Current wall: watchdog bisection, `copy_process`, what we tried |
+| [docs/g2b.md](docs/g2b.md) | G2b wall: `copy_process` history, then the 2026-09-08 timer/FIQ poke mill |
+| [docs/ghidra-pivot.md](docs/ghidra-pivot.md) | Eryk method vs installer; 25F80 dump list; ENA encodings; outstanding volume dump |
 | [docs/step2-failure-matrix.md](docs/step2-failure-matrix.md) | Every stub-1TR knob, with errors |
 | [docs/what-worked.md](docs/what-worked.md) | Short list of things that actually passed |
 | [docs/gates.md](docs/gates.md) | Gate definitions |
@@ -198,13 +202,15 @@ Not a kernel fork worth upstreaming. A **repro log**:
 - Never USB-reset gadget `0x1209:0x316d` to “unstick” a ghost ACM. Hold-power → AsahiHost.
 - Never `mkfs` without an explicit human yes after G5 PASS.
 - Never bump macOS past **26.5.1 (25F80)** on this machine.
+- Never `msr VM_TMR_FIQ_ENA_EL2` or `VM_TMR_LR` on t8132 from m1n1 (MSR ENA EL2h-SYNCs; LR is unused in 25F80 XNU).
+- Never consume a third-party M4 Linux `.pkg` (Aurora Silicon / installer-consume path).
 - Never put secrets (passwords, `.env`, USB serials, LAN IPs, volume UUIDs) in git.
 
 ---
 
 ## Credits
 
-Asahi Linux, Sven Peter, Yureka Lilian, Janne Grunau, [0xSero](https://github.com/0xSero), [@wtsnz](https://x.com/wtsnz). Mistakes in this log are ours.
+Asahi Linux, Sven Peter, Yureka Lilian, Janne Grunau, [0xSero](https://github.com/0xSero), [@wtsnz](https://x.com/wtsnz), Eryk Wieliczko ([@ewninjaofficial](https://x.com/ewninjaofficial)). This notebook is **the lab** ([@themartiano](https://x.com/themartiano)). Mistakes in this log are ours.
 
 ---
 

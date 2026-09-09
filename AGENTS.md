@@ -1,6 +1,6 @@
 # Agent instructions
 
-You are helping with **bring-up**, not a product. Read `status.json` and `README.md` before editing or proposing commands. Current wall: [docs/g2b.md](docs/g2b.md). Catch-up path: [docs/getting-started.md](docs/getting-started.md).
+You are helping with **bring-up**, not a product. Read `status.json` and `README.md` before editing or proposing commands. Current wall: [docs/g2b.md](docs/g2b.md) (timer/FIQ/ENA; G2b not PASS). Pivot: [docs/ghidra-pivot.md](docs/ghidra-pivot.md). Catch-up path: [docs/getting-started.md](docs/getting-started.md).
 
 ## Truth
 
@@ -20,6 +20,7 @@ You are helping with **bring-up**, not a product. Read `status.json` and `README
 - Never bump macOS past the freeze in `status.json`.
 - Never put secrets (passwords, `.env`, USB serials, LAN IPs, volume UUIDs) in git.
 - Never skip `copy_process` or `current->nsproxy`. Never skip `numa_default_policy` (tested; did not unblock).
+- Never `msr VM_TMR_FIQ_ENA_EL2` (or `VM_TMR_LR`) on t8132 from m1n1.
 
 ## How to work
 
@@ -30,6 +31,7 @@ You are helping with **bring-up**, not a product. Read `status.json` and `README
 5. Stub 1TR on 26.5.1 is a **dead path**. G1 here was **AsahiHost** (full second macOS).
 6. Do not open Asahi PRs that enable `j715ap` without a supported story. See `docs/asahi-pr.md`.
 7. After a C change in `copy_process` / `kernel_clone`, reconfirm an earlier 19s site. The hang moves.
+8. HV experiments need a **Ghidra cite** ([docs/ghidra-pivot.md](docs/ghidra-pivot.md)); no folklore `wdt_site`. Do not `msr VM_TMR_FIQ_ENA_EL2` on t8132 (EL2h-SYNC). IMP-MSR of ENA/LR is banned.
 
 ## Where the live lab lives
 

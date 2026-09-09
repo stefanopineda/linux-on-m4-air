@@ -1,8 +1,10 @@
-# G2b — the wall (2026-09-07)
+# G2b — the wall
 
-**Goal:** first userspace process (`/init`) after the Linux banner. **Not there yet.**
+**Goal:** first userspace process (`/init`) after the Linux banner. **Not there yet. G2b is not PASS.**
 
-UART is dead after we mute printk (the next `printk` after dummy-console init hangs). So this is not a “read the oops” problem. It is a “did this C statement run?” problem.
+As of **2026-09-08** the wall is timer/FIQ/`VM_TMR_FIQ_ENA_EL2`: the guest never takes the Apple FIQ vector, and writing ENA from m1n1 EL2h-SYNCs on this t8132. The 2026-09-07 `kernel_clone`→`copy_process` sandwich below is **history** — do not rewind it, and do **not** skip `copy_process`. Pivot: [ghidra-pivot.md](ghidra-pivot.md).
+
+UART is dead after we mute printk (the next `printk` after dummy-console init hangs). So this is not a “read the oops” problem. It is a “did this C statement run?” problem. **~19s** = guest 8s watchdog fired (that statement ran). **~100s** = EL2 90s watchdog (it never ran).
 
 ---
 
@@ -91,6 +93,61 @@ Themes of the clone/`copy_process` era (overlapping; one Image often combines a 
 
 ---
 
-## Next honest experiment
+## Next honest experiment (2026-09-07 — superseded)
 
 Isolate **`mrs SP_EL0` / `current`** on the `kernel_clone` side without skipping `copy_process`, then **reconfirm 713**. If 713 stays 100s, the hang moved again and the last C change is implicated.
+
+That was the plan on 2026-09-07. Later clean boots walked *past* that sandwich. Do not skip `copy_process`. The 2026-09-08 wall is below.
+
+---
+
+## 2026-09-08 — poke mill, then stop
+
+The 2026-09-07 README still said hang on `kernel_clone`→`copy_process`. That was early. Later unique Images (do not re-boot a hash) fully bracketed the guest exception class and then the IMP timer-steer deadlock. Further `wdt_site` folklore cannot read Apple’s binaries.
+
+### Guest exception class (sites 783–786)
+
+INIT-gated crumbs after `G2_MUTED`:
+
+| Site | Where | Result |
+| --- | --- | --- |
+| 783 | `aic_handle_fiq` after INIT | **100s** — never entered |
+| 784 | `aic_handle_irq` after INIT | **100s** — never entered |
+| 785 | `irq_enter_rcu` after INIT | **100s** — never entered |
+| 786 | guest EL1h FIQ vector after INIT | **100s** — never entered |
+
+Hang is **not** “we never took an IRQ handler because we skipped too much kernel.” The vector itself is silent.
+
+### m1n1 T/V/W probes
+
+Printf probes in EL2 (not guest pokes):
+
+| Probe | Where | What we saw |
+| --- | --- | --- |
+| **T** | `hv_tick` | CNTP FIQ **reaches EL2** |
+| **V** | `hv_update_fiq` | CNTV **pends** on `CNTV_CTL_EL02` |
+| **W** | `hv_exc_fiq` CNTV branch | **never** on the guest path we hoped |
+
+So the physical timer is alive at EL2, the virtual timer pends, and the guest still does not take FIQ.
+
+### Surgical `hv_update_fiq` gate revert — DIRTY
+
+Unconditional `msr VM_TMR_FIQ_ENA_EL2` (mirroring upstream m1n1 / PR604) **EL2h-SYNCs** on this t8132. MRS of ENA is legal. Peek **`ENA f`**: iBoot already opened the gate. Gate restored. Do not re-boot that macho. **Do not IMP-MSR ENA or LR.**
+
+### HCR FMO+VF on; Linux VBAR; guest unmasked
+
+HCR `FMO+VF` on; guest `VBAR` is Linux `vectors`; hang-window SPSR is EL1h with DAIF unmasked. Clearing FMO **un-wedges** as far as a guest `SMPRI` `Pass:` — but AIC FIQ still never entered. That is a steer-deadlock: **ENA vs FMO**, not “guest masked.”
+
+### Synthetic FIQ inject still MUTED
+
+Inject at `VBAR+0x300` (including **live-window INJ4** on boot **174**, 2026-09-08 ~20:30Z, unique Image `70a7fda5…`) still **MUTED**. Hang-window PCs were `cpu_enable_sme` (`mrs`/`msr` SMPRI) and `__switch_to` TPIDR2 — **never** the FIQ vector.
+
+IMP-MSR **ENA** and **LR** are locked on this t8132. Do not write them.
+
+### Why it stopped
+
+More guest `wdt_site` folklore cannot read Apple’s binaries. Pivot: dump 25F80, decompile timer/AIC/ENA in Ghidra, then experiment. [ghidra-pivot.md](ghidra-pivot.md).
+
+**G2b remains not PASS.** Next public-facing wall: guest never takes the Apple FIQ vector; writing ENA from m1n1 SYNCs on this chip. Outstanding: live Macintosh HD volume dump of `BootKernelExtensions.kc` (AppleAIC) + snapshot — a planned boot, not another guest poke.
+
+Do **not** skip `copy_process`. Do **not** skip `current->nsproxy`. Do **not** skip `numa_default_policy`.

@@ -1,8 +1,8 @@
 # Getting started — catch up to this lab
 
-This is not an installer. It is the shortest path that reaches **the same wall we are on**: Linux 7.1.9 banner under m1n1 HV, then a hang on the `kernel_clone` → `copy_process` edge.
+This is not an installer. It is the shortest path that reaches **the same wall we are on**: Linux 7.1.9 banner under m1n1 HV, then the timer/FIQ/`VM_TMR_FIQ_ENA_EL2` wall (guest never takes the Apple FIQ vector). The 2026-09-07 `kernel_clone` → `copy_process` sandwich is history on the way there — do **not** skip `copy_process`.
 
-If you only want the mental model, the [README](../README.md) is enough. If you want to stand on the same hardware checkpoint, read this, then [g2b.md](g2b.md).
+If you only want the mental model, the [README](../README.md) is enough. If you want to stand on the same hardware checkpoint, read this, then [g2b.md](g2b.md) and [ghidra-pivot.md](ghidra-pivot.md).
 
 **Hardware we used:** 15″ MacBook Air (2025), `Mac16,13` / `j715ap` / T8132. A **second computer** (another Mac is easiest). A USB-C **data** cable, not charge-only. Avoid hubs.
 
@@ -120,7 +120,7 @@ Keep:
 
 Do **not** skip: `copy_process`, `current->nsproxy`, `numa_default_policy`, `kernel_init_freeable` (skipping the last two was tested; they did not unblock).
 
-You are caught up when your last **19s** poke is after `valid_signal` in `kernel_clone` and the poke immediately before `copy_process` is **100s**. That is [g2b.md](g2b.md).
+The 2026-09-07 catch-up was: last **19s** poke after `valid_signal` in `kernel_clone`, poke immediately before `copy_process` is **100s**. Keep that as history; do **not** skip `copy_process`. You are caught up *now* when you have also reproduced the timer/FIQ wall (exception class silent after INIT; ENA already `f`; MSR ENA SYNCs) and the encodings in [ghidra-pivot.md](ghidra-pivot.md). That is [g2b.md](g2b.md).
 
 ---
 
