@@ -2,7 +2,7 @@
 
 This is not an installer. It is the shortest path that reaches **the same wall we are on**: Linux 7.1.9 banner under m1n1 HV, then the timer/FIQ/`VM_TMR_FIQ_ENA_EL2` wall (guest never takes the Apple FIQ vector). The 2026-09-07 `kernel_clone` → `copy_process` sandwich is history on the way there — do **not** skip `copy_process`.
 
-If you only want the mental model, the [README](../README.md) is enough. If you want to stand on the same hardware checkpoint, read this, then [g2b.md](g2b.md) and [ghidra-pivot.md](ghidra-pivot.md).
+If you only want the mental model, the [README](../README.md) is enough. If you want to stand on the same hardware checkpoint, read this, then [g2b.md](g2b.md) and [ghidra-pivot.md](ghidra-pivot.md) for the wall *before* copy_process, and [what-came-past-copy-process.md](what-came-past-copy-process.md) for the walk past copy_process into /init and the G2b PASS.
 
 **Hardware we used:** 15″ MacBook Air (2025), `Mac16,13` / `j715ap` / T8132. A **second computer** (another Mac is easiest). A USB-C **data** cable, not charge-only. Avoid hubs.
 

@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-08T22:32:10Z",
+  "updated": "2026-09-12T02:59:31Z",
   "project": "linux-on-m4-air",
   "public": true,
   "public_ready": true,
@@ -14,29 +14,76 @@
   },
   "honesty": "QEMU/UTM/VKMS/iBoot-FB/Hyprland-on-fake-display do not count",
   "gates": {
-    "G0": { "state": "pass", "when": "2026-09-05", "note": "identity dump" },
-    "G1": { "state": "pass", "when": "2026-09-05T20:49:00Z", "note": "AsahiHost Permissive + kmutil m1n1; stub 1TR dead on 26.5.1" },
-    "G2": { "state": "pass", "when": "2026-09-06T15:58:11Z", "note": "Linux 7.1.9 banner + Machine model on HV VUART" },
-    "G2b": {
-      "state": "now",
-      "when": "2026-09-08",
-      "note": "timer/FIQ/ENA wall + Ghidra pivot. Guest never takes Apple FIQ vector; msr VM_TMR_FIQ_ENA_EL2 EL2h-SYNCs on t8132. 25F80 kernelcache: 5x MSR ENA, 0x MRS ENA, 0x VM_TMR_LR; vmentry writes ENA=0xF. copy_process sandwich is history; do not skip copy_process or current->nsproxy. G2b is not PASS."
+    "G0": {
+      "state": "pass",
+      "when": "2026-09-05",
+      "note": "identity dump"
     },
-    "G5": { "state": "todo", "note": "NVMe RO after G2b" },
-    "G6": { "state": "todo", "note": "linux-owned scanout; dcp+disp0; leftover FB does not count" },
-    "G7": { "state": "todo", "note": "MTP keyboard (Air is MTP+dockchannel, not SPI)" },
-    "trackpad": { "state": "todo", "note": "MTP; wtsnz public pass 2026-09-06 on M4 Max" },
-    "weston": { "state": "todo", "note": "software compositor after G6+HID; wtsnz public pass 2026-09-06" },
-    "G4": { "state": "todo", "note": "USB host beyond debug CDC" },
-    "G8": { "state": "todo", "note": "bcm4387 / PCIe; wtsnz public pass 2026-08-29 on M4 Max" },
-    "G9": { "state": "blocked", "note": "mkfs needs G5 + spoken yes" },
-    "G10": { "state": "todo", "note": "real AGX; wtsnz public AGX+DCP 2026-09-07 on M4 Max; Hyprland still open there" },
-    "G11": { "state": "todo", "note": "Omarchy after a real console+GPU" }
+    "G1": {
+      "state": "pass",
+      "when": "2026-09-05T20:49:00Z",
+      "note": "AsahiHost Permissive + kmutil m1n1; stub 1TR dead on 26.5.1"
+    },
+    "G2": {
+      "state": "pass",
+      "when": "2026-09-06T15:58:11Z",
+      "note": "Linux 7.1.9 banner + Machine model on HV VUART"
+    },
+    "G2b": {
+      "state": "pass",
+      "when": "2026-09-10T21:34:47Z",
+      "note": "Honest userspace G2_INIT_ALIVE after kernel_execve. Image c7c5cf30 ENABLE=0 macho d3782489. PX park_ok 40000c. Kernel has zero copies of the string. evidence/g2/G2B-PASS-HONEST.txt. adcf4c0f classifier PASS was poison."
+    },
+    "G5": {
+      "state": "todo",
+      "note": "NVMe RO after G2b"
+    },
+    "G6": {
+      "state": "todo",
+      "note": "linux-owned scanout; dcp+disp0; leftover FB does not count"
+    },
+    "G7": {
+      "state": "todo",
+      "note": "MTP keyboard (Air is MTP+dockchannel, not SPI)"
+    },
+    "trackpad": {
+      "state": "todo",
+      "note": "MTP; wtsnz public pass 2026-09-06 on M4 Max"
+    },
+    "weston": {
+      "state": "todo",
+      "note": "software compositor after G6+HID; wtsnz public pass 2026-09-06"
+    },
+    "G4": {
+      "state": "todo",
+      "note": "USB host beyond debug CDC"
+    },
+    "G8": {
+      "state": "todo",
+      "note": "bcm4387 / PCIe; wtsnz public pass 2026-08-29 on M4 Max"
+    },
+    "G9": {
+      "state": "blocked",
+      "note": "mkfs needs G5 + spoken yes"
+    },
+    "G10": {
+      "state": "todo",
+      "note": "real AGX; wtsnz public AGX+DCP 2026-09-07 on M4 Max; Hyprland still open there"
+    },
+    "G11": {
+      "state": "todo",
+      "note": "Omarchy after a real console+GPU"
+    }
   },
   "g1_path": "asahihost",
   "stub_1tr": "dead_on_26.5.1",
-  "gap_to_wtsnz_weston_trackpad": ["G2b", "G6", "G7", "trackpad", "weston"],
-  "gap_note": "five gates behind 2026-09-06 Weston+trackpad. AGX (2026-09-07) is a further checkpoint, off this path. Hyprland still open for wtsnz. This Air G2b wall is timer/FIQ/ENA, not userspace.",
+  "gap_to_wtsnz_weston_trackpad": [
+    "G6",
+    "G7",
+    "trackpad",
+    "weston"
+  ],
+  "gap_note": "four gates behind 2026-09-06 Weston+trackpad (G6/G7/trackpad/weston). Honest G2b PASS 2026-09-10T21:34Z userspace G2_INIT_ALIVE. Next G2c lid and G5 NVMe RO. Leftover iBoot FB does not count for G6.",
   "others": {
     "asahi": "M1/M2 supported; M4 bring-up; t8132-j715.dts in tree",
     "0xSero": "M4 mini j773; public HEAD last noted e0d67e3 / 2026-08-28; G1 stub + HV RAM Linux + Ethernet SSH; NVMe/DCP open; VKMS Hyprland does not count; do not DM",
@@ -50,11 +97,11 @@
     "g2_linux": "7.1.9-g77cb8f24c",
     "g2b_last_19s_site": 738,
     "g2b_last_100s_before_copy_process": 713,
-    "g2b_wdt_images": 38,
+    "g2b_wdt_images": 181,
     "g2b_copy_process_images": 17,
-    "g2b_last_hv": 174,
-    "g2b_last_hv_when": "2026-09-08T20:30:42Z",
-    "g2b_last_hv_image_prefix": "70a7fda5",
+    "g2b_last_hv": "Q-pp-g5-nvme-boot",
+    "g2b_last_hv_when": "2026-09-12T02:58:52Z",
+    "g2b_last_hv_image_prefix": "e88ca65a",
     "vm_tmr_fiq_ena_el2": "sys_reg(3,5,15,1,3)",
     "vm_tmr_fiq_ena_mrs": "0xD53DF160",
     "vm_tmr_fiq_ena_msr": "0xD51DF160",

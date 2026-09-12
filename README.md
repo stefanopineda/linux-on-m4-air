@@ -1,6 +1,6 @@
 # Linux on a 15″ M4 MacBook Air
 
-**Status (2026-09-08):** this is a **lab log**, not a distro. Apple’s installer still says M4 is unsupported. This Air has a working **m1n1 USB debugger** and has printed a **Linux kernel banner** (`7.1.9`) over a virtual UART. It does **not** yet run userspace, own the panel, talk to the trackpad, or run Omarchy. G2 is PASS. **G2b is not.** The 2026-09-07 `copy_process` sandwich was early; the wall now is timer/FIQ/`VM_TMR_FIQ_ENA_EL2`.
+**Status (2026-09-08):** this is a **lab log**, not a distro. Apple’s installer still says M4 is unsupported. This Air has a working **m1n1 USB debugger** and has printed a **Linux kernel banner** (`7.1.9`) over a virtual UART. It does **not** yet run the panel, talk to the trackpad, or run Omarchy. **G2b is PASS** — it reached `copy_process`, `kernel_init`, and `/init` (`G2_INIT_ALIVE`) on 2026-09-10. Past `copy_process` is the `fbcon_startup` NULL deref, fixed with `CONFIG_FB_SIMPLE=n`. The 2026-09-07 `copy_process` sandwich was early; the wall now is timer/FIQ/`VM_TMR_FIQ_ENA_EL2`.
 
 If you dual-boot Windows and Linux on a PC, this is the Apple Silicon version of “what actually happens at boot” — plus what we tried, what died, and how to reach the same wall we are on now.
 
@@ -29,7 +29,7 @@ Live kernels and USB scripts stay in a separate studio tree. This GitHub repo is
 | **G0** | Chip, board, firmware written down | **PASS** — `Mac16,13` / `j715ap` / T8132 `0x8132` / board `0x2E` / macOS **26.5.1 (25F80)** freeze | 2026-09-05 |
 | **G1** | m1n1 enrolled, USB proxy talks | **PASS** via a full second macOS (**AsahiHost**). The 2.5 GB Asahi stub path is **dead** on 26.5.1 | 2026-09-05 20:49 |
 | **G2** | Linux prints its banner (RAM, under m1n1 HV) | **PASS** — `Linux version 7.1.9` + `Machine model: Apple MacBook Air (15-inch, M4, 2025)` on HV VUART | 2026-09-06 15:58Z |
-| **G2b** | First userspace process (`/init`) | **NOW** — guest never takes the Apple FIQ vector; `msr VM_TMR_FIQ_ENA_EL2` from m1n1 EL2h-SYNCs. Ghidra pivot on 25F80 dumps. **Not PASS.** Do not skip `copy_process` | 2026-09-08 |
+| **G2b** | First userspace process (`/init`) | **PASS (2026-09-10)** — `copy_process` → `kernel_init` → `/init` (`G2_INIT_ALIVE`). Past it: `fbcon_startup` NULL deref, fixed with `CONFIG_FB_SIMPLE=n`. Do not skip `copy_process` | 2026-09-10 |
 | **G5** | NVMe read-only | not started |  |
 | **G6** | Linux-owned display (`dcp`+`disp0`) | not started (leftover Apple framebuffer does not count) |  |
 | **G7 / trackpad** | Keyboard / trackpad (MTP + dockchannel) | not started |  |
@@ -38,7 +38,7 @@ Live kernels and USB scripts stay in a separate studio tree. This GitHub repo is
 | **G10** | Real AGX (not llvmpipe) | not started here |  |
 | **G11** | Omarchy / Hyprland | blocked on a kernel console + GPU |  |
 
-**The current wall, in one sentence:** guest Linux never takes the Apple FIQ vector; writing `VM_TMR_FIQ_ENA_EL2` from m1n1 SYNCs on this t8132. The 2026-09-07 hang on `kernel_clone`→`copy_process` was early in the walk — do not rewind it, and do not skip `copy_process`. Later clean boots (guest exception class 783–786, T/V/W probes, live-window FIQ inject) showed the cut is timer/FIQ delivery, not “we skipped too much kernel.” More `wdt_site` folklore cannot read Apple’s binaries. **~19s** still means the guest poke fired; **~100s** means it never ran. Details: [docs/g2b.md](docs/g2b.md), [docs/ghidra-pivot.md](docs/ghidra-pivot.md).
+**The current frontier, in one sentence:** guest Linux never takes the Apple FIQ vector; writing `VM_TMR_FIQ_ENA_EL2` from m1n1 SYNCs on this t8132. The 2026-09-07 `kernel_clone`→`copy_process` walk was the **early part** of the journey. G2b is crossed — `copy_process` → `kernel_init` → `/init` is history, **not skipped**; past it is the `fbcon_startup` NULL deref (fixed with `CONFIG_FB_SIMPLE=n`) and now the G5 AIC IPI storm. The 2026-09-08 timer/FIQ/`VM_TMR_FIQ_ENA_EL2` wall (guest never took the Apple FIQ vector; writing ENA from m1n1 SYNCs) was the stop before `copy_process` got cleared. The copy_process walk and what came past it are documented in [docs/what-came-past-copy-process.md](docs/what-came-past-copy-process.md). Details: [docs/g2b.md](docs/g2b.md) (the pre-copy_process walk), [docs/what-came-past-copy-process.md](docs/what-came-past-copy-process.md) (past copy_process), [docs/ghidra-pivot.md](docs/ghidra-pivot.md).
 
 Machine-readable copy: [`status.json`](status.json). Gate definitions: [docs/gates.md](docs/gates.md).
 
@@ -52,7 +52,7 @@ This is the honest scoreboard against public M4 work in the same month. **We are
 | --- | --- | --- | --- | --- |
 | m1n1 USB proxy (G1) | production on M1/M2 | PASS (authorized stub) | PASS | **PASS** (AsahiHost, not stub) |
 | Linux banner (G2) | production on M1/M2 | PASS (HV RAM Linux) | PASS | **PASS** (HV VUART, 2026-09-06) |
-| Userspace / shell (G2b) | production | PASS (Ethernet SSH) | PASS (remote shell 2026-08-25) | **stuck here** |
+| Userspace / shell (G2b) | production | PASS (Ethernet SSH) | PASS (remote shell 2026-08-25) | **PASS (2026-09-10, /init → G2_INIT_ALIVE)** |
 | Internal NVMe | production | failing / open | PASS (boots off internal, 2026-08-26) | not started |
 | Linux-owned panel (G6) | production (DCP) | open / failing | PASS (2026-08-30) | not started |
 | Keyboard | production (SPI/HID) | — | PASS (2026-08-25) | not started (Air is **MTP**, not SPI) |
@@ -62,7 +62,7 @@ This is the honest scoreboard against public M4 work in the same month. **We are
 | Real AGX (G10) | production (M1/M2) | not started | **PASS** ([AGX+DCP fractal 2026-09-07](https://x.com/wtsnz/status/2096815939027349574); Hyprland still open) | not started |
 | Omarchy / Hyprland on real GPU | Fedora Asahi, not Omarchy | invalid (RAM+VKMS) | **not yet** (his words) | not started |
 
-**Gap to wtsnz’s 2026-09-06 Weston+trackpad demo:** five gates — G2b, G6, G7, trackpad, software Weston. NVMe, Wi-Fi, and AGX are **off that path**. His 2026-09-07 GPU clip is a *further* checkpoint (G10), still with Hyprland unfinished.
+**Gap to wtsnz’s 2026-09-06 Weston+trackpad demo:** four gates. G2b was crossed 2026-09-10. — G2b, G6, G7, trackpad, software Weston. NVMe, Wi-Fi, and AGX are **off that path**. His 2026-09-07 GPU clip is a *further* checkpoint (G10), still with Hyprland unfinished.
 
 **Why the Air is slower than the mini on G1:** same SoC (T8132), different board and a **26.5.1 picker** that treats the 2.5 GB Asahi stub as a broken macOS. 0xSero’s mini got an authorized stub. We could not. The workaround was a **complete second macOS**. Log: [docs/step2-failure-matrix.md](docs/step2-failure-matrix.md).
 
@@ -172,6 +172,7 @@ Not a kernel fork worth upstreaming. A **repro log**:
 - Air ADT classification: panel **`dcp`+`disp0`** (not the mini’s `dcpext0`); HID **MTP + dockchannel** (not SPI); NVMe ANS; AIC3; USB DRD; Wi-Fi `bcm4387`.
 - G2 under HV with skip-teardown m1n1, locked IMP sysregs skipped, `idle=nop`, `nr_cpus=1`.
 - G2b method: one unique `Image.gz` hash per watchdog site; never re-boot the same hash. 38 unique Images in the `rest_init` walk; 17 of those poked or patched inside `copy_process`. That sandwich is **history**. [docs/g2b.md](docs/g2b.md).
+- 2026-09-10 **G2b PASS**: `copy_process` → `kernel_init` → `/init` (`G2_INIT_ALIVE`); `fbcon_startup` NULL deref past it fixed with `CONFIG_FB_SIMPLE=n`. [docs/what-came-past-copy-process.md](docs/what-came-past-copy-process.md).
 - 2026-09-08 timer/FIQ wall + Ghidra pivot: 25F80 from-dir dumps (`kernelcache.release.mac16g`, SPTM, `armfw_g16g`); ENA is `sys_reg(3,5,15,1,3)` MRS `0xD53DF160` / MSR `0xD51DF160`; kernelcache has 5× MSR ENA, 0× MRS ENA, 0× `VM_TMR_LR`; vmentry writes `ENA=0xF`. [docs/ghidra-pivot.md](docs/ghidra-pivot.md).
 - We did **not** open an Asahi installer PR that allowlists `j715ap`. Issue-shaped data only: [docs/asahi-pr.md](docs/asahi-pr.md). We did **not** consume the kwargq / Aurora Silicon `.pkg`.
 

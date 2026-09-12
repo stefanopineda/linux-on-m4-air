@@ -13,7 +13,9 @@ This is the **method** [@ewninjaofficial](https://x.com/ewninjaofficial) publish
 | **Eryk / Ghidra + snapshots** | [GPU compute on MBA M4](https://x.com/ewninjaofficial/status/2093963487449841675): dump macOS, many Linux reboots, Ghidra on GPU drivers/firmware. | **Following the method** (dump 25F80, decompile, then experiment). Not claiming GPU compute. |
 | **Installer consume** | [@kwargq](https://x.com/kwargq/status/2097351557717074307) ran an Eryk / Aurora Silicon `.pkg` (desktop, still **llvmpipe**). | **Not taken.** Do not consume that installer. |
 
-Asahi already has m1n1, fuOS, and `t8132-j715.dts`. Official support is M1/M2; M4 is bring-up. [0xSero/mac-mini-m4-linux](https://github.com/0xSero/mac-mini-m4-linux) is the same SoC on a mini (`j773`); public HEAD last noted `e0d67e3` / 2026-08-28 — do not DM. [@wtsnz](https://x.com/wtsnz) on an M4 Max is further along (shell, NVMe, Weston, AGX clips). This Air is still G2b.
+Asahi already has m1n1, fuOS, and `t8132-j715.dts`. Official support is M1/M2; M4 is bring-up.
+
+**Side note (progress):** G2b was crossed 2026-09-10 — `copy_process` → `kernel_init` → `/init` (`G2_INIT_ALIVE`). This pivot was the stop before that. See [what-came-past-copy-process.md](what-came-past-copy-process.md). [0xSero/mac-mini-m4-linux](https://github.com/0xSero/mac-mini-m4-linux) is the same SoC on a mini (`j773`); public HEAD last noted `e0d67e3` / 2026-08-28 — do not DM. [@wtsnz](https://x.com/wtsnz) on an M4 Max is further along (shell, NVMe, Weston, AGX clips). This Air is still G2b.
 
 ---
 

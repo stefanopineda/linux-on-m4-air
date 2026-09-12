@@ -1,6 +1,6 @@
 # Agent instructions
 
-You are helping with **bring-up**, not a product. Read `status.json` and `README.md` before editing or proposing commands. Current wall: [docs/g2b.md](docs/g2b.md) (timer/FIQ/ENA; G2b not PASS). Pivot: [docs/ghidra-pivot.md](docs/ghidra-pivot.md). Catch-up path: [docs/getting-started.md](docs/getting-started.md).
+You are helping with **bring-up**, not a product. Read `status.json` and `README.md` before editing or proposing commands. G2b is PASS (copy_process → kernel_init → /init, 2026-09-10); the wall past G2b is the fbcon NULL deref (fixed with CONFIG_FB_SIMPLE=n) and the G5 AIC IPI storm. Pre-copy_process wall in [docs/g2b.md](docs/g2b.md). Past copy_process in [docs/what-came-past-copy-process.md](docs/what-came-past-copy-process.md). Pivot: [docs/ghidra-pivot.md](docs/ghidra-pivot.md). Catch-up path: [docs/getting-started.md](docs/getting-started.md).
 
 ## Truth
 
